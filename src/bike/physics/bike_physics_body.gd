@@ -11,6 +11,12 @@ var front_wheel: WheelSuspensionScript
 var rear_wheel: WheelSuspensionScript
 var balance: BikeBalanceScript
 
+var _cmd_rear_drive_force: float = 0.0
+var _cmd_rear_brake_force: float = 0.0
+var _cmd_front_brake_force: float = 0.0
+var _cmd_lean_torque: float = 0.0
+var _cmd_pitch_torque: float = 0.0
+
 
 func _ready() -> void:
     if config == null:
@@ -60,6 +66,28 @@ func apply_config() -> void:
     )
 
 
+func apply_control_commands(
+    rear_drive_force: float,
+    rear_brake_force: float,
+    front_brake_force: float,
+    lean_torque: float,
+    pitch_torque: float = 0.0
+) -> void:
+    _cmd_rear_drive_force = rear_drive_force
+    _cmd_rear_brake_force = maxf(0.0, rear_brake_force)
+    _cmd_front_brake_force = maxf(0.0, front_brake_force)
+    _cmd_lean_torque = lean_torque
+    _cmd_pitch_torque = pitch_torque
+
+
+func clear_control_commands() -> void:
+    _cmd_rear_drive_force = 0.0
+    _cmd_rear_brake_force = 0.0
+    _cmd_front_brake_force = 0.0
+    _cmd_lean_torque = 0.0
+    _cmd_pitch_torque = 0.0
+
+
 func _physics_process(delta: float) -> void:
     if delta <= 0.0:
         return
@@ -96,6 +124,7 @@ func _physics_process(delta: float) -> void:
 
     _apply_wheel_forces(front_wheel, delta)
     _apply_wheel_forces(rear_wheel, delta)
+    _apply_drive_and_brake_forces(delta)
 
     var forward_speed: float = linear_velocity.dot(global_transform.x.normalized())
     var balance_torque: float = balance.compute_torque(
@@ -107,7 +136,7 @@ func _physics_process(delta: float) -> void:
         rear_wheel.contact_normal,
         forward_speed
     )
-    apply_torque(balance_torque)
+    apply_torque(balance_torque + _cmd_lean_torque + _cmd_pitch_torque)
 
 
 func _apply_wheel_forces(wheel: WheelSuspensionScript, delta: float) -> void:
@@ -127,6 +156,37 @@ func _apply_wheel_forces(wheel: WheelSuspensionScript, delta: float) -> void:
         var resist_force: Vector2 = -wheel.surface_tangent * signf(speed) * resist_mag
         var wheel_offset: Vector2 = wheel.wheel_center_global - global_position
         apply_force(resist_force, wheel_offset)
+
+
+func _apply_drive_and_brake_forces(delta: float) -> void:
+    var grip: float = float(config.traction_grip)
+
+    if rear_wheel.is_grounded and absf(_cmd_rear_drive_force) > 0.01:
+        if _cmd_rear_drive_force > 0.0:
+            apply_central_force(rear_wheel.surface_tangent * (_cmd_rear_drive_force * grip))
+        else:
+            var speed: float = rear_wheel.linear_ground_speed
+            if speed > 0.5:
+                var ebrake_mag: float = minf(absf(_cmd_rear_drive_force) * grip, (speed * mass * 0.4) / delta)
+                apply_central_force(-rear_wheel.surface_tangent * ebrake_mag)
+
+    _apply_wheel_brake(rear_wheel, _cmd_rear_brake_force, grip, delta)
+    _apply_wheel_brake(front_wheel, _cmd_front_brake_force, grip, delta)
+
+
+func _apply_wheel_brake(wheel: WheelSuspensionScript, brake_force: float, grip: float, delta: float) -> void:
+    if not wheel.is_grounded or brake_force <= 0.01:
+        return
+
+    var speed: float = wheel.linear_ground_speed
+    if absf(speed) <= 0.05:
+        return
+
+    var ramp: float = minf(1.0, absf(speed) / 8.0)
+    var brake_mag: float = brake_force * grip * ramp
+    var max_stop_force: float = (absf(speed) * mass * 0.45) / delta
+    brake_mag = minf(brake_mag, max_stop_force)
+    apply_central_force(-wheel.surface_tangent * signf(speed) * brake_mag)
 
 
 func get_center_of_mass_global() -> Vector2:
