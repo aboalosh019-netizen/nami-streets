@@ -11,6 +11,8 @@ config_version=5
 [autoload]
 
 GameConfig="*res://src/core/game_config.gd"
+GameManager="*res://src/core/game_manager.gd"
+SceneManager="*res://src/core/scene_manager.gd"
 
 [application]
 
