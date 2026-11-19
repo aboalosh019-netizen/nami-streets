@@ -7,6 +7,7 @@ const SaveStoreScript = preload("res://src/economy/save_store.gd")
 const UpgradeApplier = preload("res://src/economy/bike_upgrade_applier.gd")
 
 @export var save_path: String = ""
+@export var main_menu_scene_path: String = "res://src/ui/main_menu.tscn"
 
 @onready var world_manager: Node = $WorldManager
 @onready var reward_tracker: Node = $RewardTracker
@@ -20,6 +21,9 @@ var save_store: RefCounted
 var last_save_load_result: Dictionary = {}
 var last_save_ok: bool = true
 var last_save_error: String = ""
+var _active_bike: Node2D = null
+var _active_controller: Node = null
+var _last_audio_gear: int = -1
 
 
 func _ready() -> void:
@@ -34,9 +38,14 @@ func _ready() -> void:
     garage_menu.call("bind_data", economy_state, save_store)
 
     _bind_current_zone()
+    _start_gameplay_audio()
 
 
 func _exit_tree() -> void:
+    _stop_gameplay_audio()
+    _active_bike = null
+    _active_controller = null
+    _last_audio_gear = -1
     _disconnect_all_signals()
 
     if reward_tracker != null and is_instance_valid(reward_tracker):
@@ -90,6 +99,7 @@ func _disconnect_signal_safe(emitter: Object, signal_name: StringName, callback:
 
 func _connect_world_signals() -> void:
     _connect_signal_safe(world_manager, &"zone_loaded", _on_zone_loaded)
+    _connect_signal_safe(world_manager, &"zone_transition_started", _on_zone_transition_started)
 
 
 func _connect_ui_signals() -> void:
@@ -102,10 +112,12 @@ func _connect_ui_signals() -> void:
     _connect_signal_safe(garage_menu, &"bike_equipped", _on_bike_equipped)
     _connect_signal_safe(garage_menu, &"purchase_completed", _on_purchase_completed)
     _connect_signal_safe(reward_tracker, &"reward_earned", _on_reward_earned)
+    _connect_signal_safe(reward_tracker, &"combo_reset", _on_combo_reset)
 
 
 func _disconnect_all_signals() -> void:
     _disconnect_signal_safe(world_manager, &"zone_loaded", _on_zone_loaded)
+    _disconnect_signal_safe(world_manager, &"zone_transition_started", _on_zone_transition_started)
     _disconnect_signal_safe(gameplay_hud, &"pause_requested", _on_pause_requested)
     _disconnect_signal_safe(pause_menu, &"resume_requested", _on_resume_requested)
     _disconnect_signal_safe(pause_menu, &"garage_requested", _on_garage_requested)
@@ -115,6 +127,7 @@ func _disconnect_all_signals() -> void:
     _disconnect_signal_safe(garage_menu, &"bike_equipped", _on_bike_equipped)
     _disconnect_signal_safe(garage_menu, &"purchase_completed", _on_purchase_completed)
     _disconnect_signal_safe(reward_tracker, &"reward_earned", _on_reward_earned)
+    _disconnect_signal_safe(reward_tracker, &"combo_reset", _on_combo_reset)
 
 
 func _bind_current_zone() -> void:
@@ -123,6 +136,12 @@ func _bind_current_zone() -> void:
         push_warning("[GAMEPLAY] Active bike is not available.")
         return
 
+    _active_bike = bike
+    _active_controller = bike.get_node_or_null("BikeController")
+    if _active_controller != null and _active_controller.has_method("get_controller_state"):
+        _last_audio_gear = int(_active_controller.call("get_controller_state").get("gear", 1))
+    else:
+        _last_audio_gear = -1
     gameplay_hud.call("bind_bike", bike)
     reward_tracker.call("bind_bike", bike)
     UpgradeApplier.apply_economy_state(bike, economy_state)
@@ -146,11 +165,15 @@ func _on_pause_requested() -> void:
         return
     touch_controls.set("controls_enabled", false)
     pause_menu.call("open_menu")
+    _set_engine_audio_paused(true)
+    _play_sfx("ui_click")
 
 
 func _on_resume_requested() -> void:
     garage_menu.visible = false
     touch_controls.set("controls_enabled", true)
+    _set_engine_audio_paused(false)
+    _play_sfx("ui_click")
 
 
 func _on_garage_requested() -> void:
@@ -158,37 +181,55 @@ func _on_garage_requested() -> void:
     garage_menu.process_mode = Node.PROCESS_MODE_ALWAYS
     garage_menu.call("refresh_menu")
     garage_menu.visible = true
+    _play_sfx("ui_click")
     touch_controls.set("controls_enabled", false)
 
 
 func _on_garage_close_requested() -> void:
     garage_menu.visible = false
     pause_menu.visible = true
+    _play_sfx("ui_click")
 
 
 func _on_respawn_requested() -> void:
     _bind_current_zone()
+    _play_sfx("transition")
 
 
 func _on_bike_equipped(_bike_id: String) -> void:
     _bind_current_zone()
     _save_progress()
+    _play_sfx("ui_click")
 
 
 func _on_purchase_completed(_item_id: String) -> void:
     _bind_current_zone()
     _save_progress()
+    _play_sfx("purchase")
 
 
-func _on_reward_earned(_reward_type: String, _amount: int, _combo: int) -> void:
+func _on_reward_earned(reward_type: String, _amount: int, combo: int) -> void:
     _save_progress()
+    var sfx: String = "near_miss" if reward_type == "near_miss" else "reward"
+    _play_sfx(sfx, minf(1.4, 1.0 + float(maxi(0, combo - 1)) * 0.06))
 
 
 func _on_main_menu_requested() -> void:
     touch_controls.set("controls_enabled", false)
+    _stop_gameplay_audio()
+    _play_sfx("ui_click")
     main_menu_requested.emit()
     if get_signal_connection_list(&"main_menu_requested").is_empty():
-        push_warning("[GAMEPLAY] Main Menu scene has not been implemented yet.")
+        call_deferred("_go_to_main_menu")
+
+
+func _go_to_main_menu() -> void:
+    var tree: SceneTree = get_tree()
+    if tree != null and tree.paused:
+        tree.paused = false
+    var sm: Node = get_node_or_null("/root/SceneManager")
+    if sm != null and sm.has_method("change_scene"):
+        sm.call("change_scene", main_menu_scene_path)
 
 
 func _save_progress() -> bool:
@@ -215,3 +256,68 @@ func get_gameplay_state() -> Dictionary:
         "last_save_error": last_save_error,
         "last_load_reason": str(last_save_load_result.get("reason", ""))
     }
+
+func _physics_process(delta: float) -> void:
+    if get_tree() != null and get_tree().paused:
+        return
+    if _active_bike == null or not is_instance_valid(_active_bike):
+        return
+    if _active_controller == null or not is_instance_valid(_active_controller):
+        return
+
+    var audio: Node = _get_audio_manager()
+    if audio == null:
+        return
+
+    var ctrl: Dictionary = _active_controller.call("get_controller_state")
+    var dt_cfg: Resource = _active_controller.get("drivetrain_config")
+    var max_rpm: float = float(dt_cfg.get("redline_rpm")) if dt_cfg != null else 10200.0
+    var gear: int = int(ctrl.get("gear", 1))
+    if _last_audio_gear != -1 and gear != _last_audio_gear:
+        _play_sfx("shift", 1.05 if gear > _last_audio_gear else 0.9)
+    _last_audio_gear = gear
+
+    var brake_lvl: float = maxf(float(ctrl.get("rear_brake_level", 0.0)), float(ctrl.get("front_brake_level", 0.0)))
+    var speed: float = _active_bike.linear_velocity.length() if _active_bike is RigidBody2D else 0.0
+    audio.call("update_bike_audio", float(ctrl.get("rpm", 1400.0)), max_rpm, float(ctrl.get("throttle", 0.0)), bool(ctrl.get("rev_limiter", false)), brake_lvl, speed, delta)
+
+
+func _get_audio_manager() -> Node:
+    return get_node_or_null("/root/AudioManager")
+
+
+func _play_sfx(sfx_name: String, pitch_scale: float = 1.0) -> void:
+    var audio: Node = _get_audio_manager()
+    if audio != null and audio.has_method("play_sfx"):
+        audio.call("play_sfx", sfx_name, pitch_scale)
+
+
+func _start_gameplay_audio() -> void:
+    var audio: Node = _get_audio_manager()
+    if audio != null:
+        audio.call("stop_menu_music")
+        audio.call("start_engine_audio")
+        audio.call("set_engine_paused", false)
+
+
+func _stop_gameplay_audio() -> void:
+    var audio: Node = _get_audio_manager()
+    if audio != null:
+        audio.call("set_engine_paused", false)
+        audio.call("stop_engine_audio")
+
+
+func _set_engine_audio_paused(paused: bool) -> void:
+    var audio: Node = _get_audio_manager()
+    if audio != null:
+        audio.call("set_engine_paused", paused)
+
+
+func _on_zone_transition_started(from_zone_id: String, _to_zone_id: String, _spawn_id: String, _portal_id: String) -> void:
+    if not from_zone_id.is_empty():
+        _play_sfx("transition")
+
+
+func _on_combo_reset(reason: String) -> void:
+    if reason == "collision":
+        _play_sfx("collision")

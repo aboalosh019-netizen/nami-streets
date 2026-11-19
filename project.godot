@@ -14,11 +14,12 @@ GameConfig="*res://src/core/game_config.gd"
 GameManager="*res://src/core/game_manager.gd"
 SceneManager="*res://src/core/scene_manager.gd"
 InputManager="*res://src/core/input_manager.gd"
+AudioManager="*res://src/audio/audio_manager.gd"
 
 [application]
 
 config/name="Nami Streets"
-run/main_scene="res://tests/test_boot.tscn"
+run/main_scene="res://src/ui/main_menu.tscn"
 config/features=PackedStringArray("4.7")
 
 [display]
