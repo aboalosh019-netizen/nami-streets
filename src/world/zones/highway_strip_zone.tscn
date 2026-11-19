@@ -1,9 +1,10 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://src/world/zones/playable_zone.gd" id="1"]
 [ext_resource type="Script" path="res://src/world/zones/spawn_point.gd" id="2"]
 [ext_resource type="PackedScene" path="res://src/camera/bike_camera.tscn" id="3"]
 [ext_resource type="Script" path="res://src/world/navigation/zone_portal.gd" id="4"]
+[ext_resource type="PackedScene" path="res://src/traffic/traffic_spawner.tscn" id="5"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(2500, 80)
@@ -118,3 +119,15 @@ color = Color(0.95, 0.6, 0.2, 0.35)
 polygon = PackedVector2Array(-40, -60, 40, -60, 40, 60, -40, 60)
 
 [node name="BikeCamera" parent="." instance=ExtResource("3")]
+
+[node name="TrafficSpawner" parent="." instance=ExtResource("5")]
+pool_size = 8
+max_active_vehicles = 4
+spawn_interval = 1.0
+min_spawn_spacing = 220.0
+min_player_clearance = 190.0
+spawn_ahead_distance = 460.0
+despawn_distance = 720.0
+road_y = 100.0
+road_min_x = -80.0
+road_max_x = 2000.0
