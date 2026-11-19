@@ -4,6 +4,7 @@ extends Node2D
 const BikeScene = preload("res://src/bike/controller/controllable_bike.tscn")
 const CameraScene = preload("res://src/camera/bike_camera.tscn")
 const SpawnPointScript = preload("res://src/world/zones/spawn_point.gd")
+const ZoneBackdropScript = preload("res://src/world/visual/zone_backdrop.gd")
 
 @export var zone_id: String = "playable_zone"
 @export var bounds_left: float = -200.0
@@ -24,6 +25,7 @@ var _respawn_count: int = 0
 
 func _ready() -> void:
     _collect_spawn_points(self)
+    _setup_backdrop()
     _setup_camera()
 
     if set_playing_state_on_ready:
@@ -199,3 +201,12 @@ func get_zone_state() -> Dictionary:
         "camera_limits": cam_limits,
         "bounds": Rect2(bounds_left, bounds_top, bounds_right - bounds_left, bounds_bottom - bounds_top)
     }
+
+func _setup_backdrop() -> void:
+    var existing: Node = get_node_or_null("ZoneBackdrop")
+    if existing != null:
+        return
+    var bd: ParallaxBackground = ZoneBackdropScript.new()
+    bd.name = "ZoneBackdrop"
+    add_child(bd)
+    bd.call("setup_for_zone", zone_id)

@@ -15,12 +15,17 @@ static func apply_economy_state(bike: Node, economy_state: RefCounted) -> Dictio
     if not economy_state.has_method("get_active_modifiers"):
         return {}
     var mods: Dictionary = economy_state.get_active_modifiers()
-    return apply_modifiers(bike, mods)
+    var applied: Dictionary = apply_modifiers(bike, mods)
+    if "active_bike_id" in economy_state:
+        _apply_visual_model(bike, str(economy_state.get("active_bike_id")))
+    return applied
 
 
 static func apply_bike_profile(bike: Node, bike_id: String, upgrade_levels: Dictionary = {}) -> Dictionary:
     var mods: Dictionary = UpgradeCatalogScript.get_effective_modifiers(bike_id, upgrade_levels)
-    return apply_modifiers(bike, mods)
+    var applied: Dictionary = apply_modifiers(bike, mods)
+    _apply_visual_model(bike, bike_id)
+    return applied
 
 
 static func apply_modifiers(bike: Node, mods: Dictionary) -> Dictionary:
@@ -113,3 +118,10 @@ static func _sync_wheel_if_cached(wheel: Variant, phys_cfg: Resource, is_front: 
         wheel.set("compression_damping", float(phys_cfg.get(prefix + "compression_damping")))
     if "rebound_damping" in wheel:
         wheel.set("rebound_damping", float(phys_cfg.get(prefix + "rebound_damping")))
+
+static func _apply_visual_model(bike: Node, bike_id: String) -> void:
+    if bike == null or bike_id.is_empty():
+        return
+    var vis: Node = bike.get_node_or_null("BikeVisual")
+    if vis != null and vis.has_method("set_bike_model"):
+        vis.call("set_bike_model", bike_id)

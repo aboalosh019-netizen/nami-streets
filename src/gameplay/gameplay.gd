@@ -24,6 +24,10 @@ var last_save_error: String = ""
 var _active_bike: Node2D = null
 var _active_controller: Node = null
 var _last_audio_gear: int = -1
+var _active_camera: Node = null
+var _rev_juice_timer: float = 0.0
+var _haptic_count: int = 0
+var _shake_count: int = 0
 
 
 func _ready() -> void:
@@ -45,6 +49,7 @@ func _exit_tree() -> void:
     _stop_gameplay_audio()
     _active_bike = null
     _active_controller = null
+    _active_camera = null
     _last_audio_gear = -1
     _disconnect_all_signals()
 
@@ -138,6 +143,11 @@ func _bind_current_zone() -> void:
 
     _active_bike = bike
     _active_controller = bike.get_node_or_null("BikeController")
+    var phys_dbg: Node = bike.get_node_or_null("PhysicsDebug")
+    if phys_dbg != null and phys_dbg.has_method("set_debug_enabled"):
+        phys_dbg.call("set_debug_enabled", false)
+    var cur_zone: Node = world_manager.call("get_current_zone") if (world_manager != null and world_manager.has_method("get_current_zone")) else null
+    _active_camera = cur_zone.call("get_active_camera") if (cur_zone != null and cur_zone.has_method("get_active_camera")) else (cur_zone.get_node_or_null("BikeCamera") if cur_zone != null else null)
     if _active_controller != null and _active_controller.has_method("get_controller_state"):
         _last_audio_gear = int(_active_controller.call("get_controller_state").get("gear", 1))
     else:
@@ -212,6 +222,8 @@ func _on_reward_earned(reward_type: String, _amount: int, combo: int) -> void:
     _save_progress()
     var sfx: String = "near_miss" if reward_type == "near_miss" else "reward"
     _play_sfx(sfx, minf(1.4, 1.0 + float(maxi(0, combo - 1)) * 0.06))
+    if reward_type == "near_miss":
+        _trigger_juice(0.18, 22, 0.45)
 
 
 func _on_main_menu_requested() -> void:
@@ -275,11 +287,20 @@ func _physics_process(delta: float) -> void:
     var gear: int = int(ctrl.get("gear", 1))
     if _last_audio_gear != -1 and gear != _last_audio_gear:
         _play_sfx("shift", 1.05 if gear > _last_audio_gear else 0.9)
+        _trigger_juice(0.12, 14, 0.3)
     _last_audio_gear = gear
 
     var brake_lvl: float = maxf(float(ctrl.get("rear_brake_level", 0.0)), float(ctrl.get("front_brake_level", 0.0)))
     var speed: float = _active_bike.linear_velocity.length() if _active_bike is RigidBody2D else 0.0
-    audio.call("update_bike_audio", float(ctrl.get("rpm", 1400.0)), max_rpm, float(ctrl.get("throttle", 0.0)), bool(ctrl.get("rev_limiter", false)), brake_lvl, speed, delta)
+    var rev_lim: bool = bool(ctrl.get("rev_limiter", false))
+    audio.call("update_bike_audio", float(ctrl.get("rpm", 1400.0)), max_rpm, float(ctrl.get("throttle", 0.0)), rev_lim, brake_lvl, speed, delta)
+    if rev_lim:
+        _rev_juice_timer += delta
+        if _rev_juice_timer >= 0.09:
+            _rev_juice_timer = 0.0
+            _trigger_juice(0.15, 18, 0.35)
+    else:
+        _rev_juice_timer = 0.0
 
 
 func _get_audio_manager() -> Node:
@@ -321,3 +342,26 @@ func _on_zone_transition_started(from_zone_id: String, _to_zone_id: String, _spa
 func _on_combo_reset(reason: String) -> void:
     if reason == "collision":
         _play_sfx("collision")
+        _trigger_juice(0.65, 90, 0.85)
+
+func _trigger_juice(shake_amount: float, haptic_ms: int, haptic_amp: float = -1.0) -> void:
+    if shake_amount > 0.0 and _active_camera != null and is_instance_valid(_active_camera) and _active_camera.has_method("add_shake"):
+        _active_camera.call("add_shake", shake_amount)
+        _shake_count += 1
+    if haptic_ms > 0:
+        Input.vibrate_handheld(haptic_ms, haptic_amp)
+        _haptic_count += 1
+
+
+func get_juice_state() -> Dictionary:
+    var dbg_enabled: bool = false
+    if _active_bike != null and is_instance_valid(_active_bike):
+        var dbg: Node = _active_bike.get_node_or_null("PhysicsDebug")
+        if dbg != null and dbg.has_method("is_debug_enabled"):
+            dbg_enabled = bool(dbg.call("is_debug_enabled"))
+    return {
+        "shake_count": _shake_count,
+        "haptic_count": _haptic_count,
+        "camera_bound": _active_camera != null and is_instance_valid(_active_camera),
+        "physics_debug_enabled": dbg_enabled
+    }
