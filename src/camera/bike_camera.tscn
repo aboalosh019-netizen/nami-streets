@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/camera/bike_camera.gd" id="1"]
+
+[node name="BikeCamera" type="Camera2D"]
+enabled = true
+position_smoothing_enabled = false
+script = ExtResource("1")
