@@ -1,14 +1,18 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://src/world/zones/playable_zone.gd" id="1"]
 [ext_resource type="Script" path="res://src/world/zones/spawn_point.gd" id="2"]
 [ext_resource type="PackedScene" path="res://src/camera/bike_camera.tscn" id="3"]
+[ext_resource type="Script" path="res://src/world/navigation/zone_portal.gd" id="4"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(3600, 80)
 
 [sub_resource type="RectangleShape2D" id="2"]
 size = Vector2(40, 900)
+
+[sub_resource type="RectangleShape2D" id="3"]
+size = Vector2(80, 140)
 
 [node name="TestTrackZone" type="Node2D"]
 script = ExtResource("1")
@@ -119,9 +123,35 @@ script = ExtResource("2")
 spawn_id = "default"
 is_default = true
 
+[node name="FromHubSpawn" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(160, 62)
+script = ExtResource("2")
+spawn_id = "from_hub"
+
+[node name="FromHighwaySpawn" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(200, 62)
+script = ExtResource("2")
+spawn_id = "from_highway"
+
 [node name="RampSpawn" type="Marker2D" parent="SpawnPoints"]
 position = Vector2(1220, 62)
 script = ExtResource("2")
 spawn_id = "ramp"
+
+[node name="Portals" type="Node2D" parent="."]
+
+[node name="EastPortalToHub" type="Area2D" parent="Portals"]
+position = Vector2(2960, 40)
+script = ExtResource("4")
+portal_id = "track_to_hub"
+target_zone_id = "hub_boulevard"
+target_spawn_id = "from_track"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Portals/EastPortalToHub"]
+shape = SubResource("3")
+
+[node name="Visual" type="Polygon2D" parent="Portals/EastPortalToHub"]
+color = Color(0.3, 0.8, 0.9, 0.35)
+polygon = PackedVector2Array(-40, -60, 40, -60, 40, 60, -40, 60)
 
 [node name="BikeCamera" parent="." instance=ExtResource("3")]

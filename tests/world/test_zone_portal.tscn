@@ -1,0 +1,48 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://tests/world/test_zone_portal.gd" id="1"]
+[ext_resource type="Script" path="res://src/world/navigation/zone_portal.gd" id="2"]
+[ext_resource type="PackedScene" path="res://src/bike/physics/bike_physics.tscn" id="3"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(2000, 40)
+
+[sub_resource type="RectangleShape2D" id="2"]
+size = Vector2(80, 120)
+
+[sub_resource type="RectangleShape2D" id="3"]
+size = Vector2(24, 24)
+
+[node name="ZonePortalTest" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(0, 120)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("1")
+
+[node name="ZonePortal" type="Area2D" parent="."]
+position = Vector2(200, 60)
+script = ExtResource("2")
+portal_id = "east_exit"
+target_zone_id = "highway_strip"
+target_spawn_id = "from_hub"
+cooldown_seconds = 0.5
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ZonePortal"]
+shape = SubResource("2")
+
+[node name="DummyBody" type="RigidBody2D" parent="."]
+position = Vector2(110, 60)
+collision_layer = 2
+collision_mask = 0
+gravity_scale = 0.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DummyBody"]
+shape = SubResource("3")
+
+[node name="Bike" parent="." instance=ExtResource("3")]
+position = Vector2(-120, 50)
