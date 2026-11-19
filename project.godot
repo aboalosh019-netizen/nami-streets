@@ -13,6 +13,7 @@ config_version=5
 GameConfig="*res://src/core/game_config.gd"
 GameManager="*res://src/core/game_manager.gd"
 SceneManager="*res://src/core/scene_manager.gd"
+InputManager="*res://src/core/input_manager.gd"
 
 [application]
 
