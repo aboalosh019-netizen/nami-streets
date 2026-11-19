@@ -1,0 +1,143 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://src/world/zones/playable_zone.gd" id="1"]
+[ext_resource type="Script" path="res://src/world/zones/spawn_point.gd" id="2"]
+[ext_resource type="PackedScene" path="res://src/camera/bike_camera.tscn" id="3"]
+[ext_resource type="Script" path="res://src/world/navigation/zone_portal.gd" id="4"]
+[ext_resource type="PackedScene" path="res://src/traffic/traffic_spawner.tscn" id="5"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(1800, 80)
+
+[sub_resource type="RectangleShape2D" id="2"]
+size = Vector2(40, 900)
+
+[sub_resource type="RectangleShape2D" id="3"]
+size = Vector2(80, 140)
+
+[sub_resource type="RectangleShape2D" id="4"]
+size = Vector2(60, 140)
+
+[node name="HubBoulevardZone" type="Node2D"]
+script = ExtResource("1")
+zone_id = "hub_boulevard"
+bounds_left = -200.0
+bounds_right = 1500.0
+bounds_top = -500.0
+bounds_bottom = 350.0
+default_spawn_id = "default"
+
+[node name="Environment" type="Node2D" parent="."]
+
+[node name="RoadSurface" type="StaticBody2D" parent="Environment"]
+position = Vector2(650, 140)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/RoadSurface"]
+shape = SubResource("1")
+
+[node name="Visual" type="Polygon2D" parent="Environment/RoadSurface"]
+color = Color(0.17, 0.18, 0.21, 1)
+polygon = PackedVector2Array(-900, -40, 900, -40, 900, 40, -900, 40)
+
+[node name="RoadStripe" type="Polygon2D" parent="Environment/RoadSurface"]
+color = Color(0.9, 0.78, 0.22, 1)
+polygon = PackedVector2Array(-850, -34, 850, -34, 850, -30, -850, -30)
+
+[node name="HubPlazaBackdrop" type="Polygon2D" parent="Environment"]
+z_index = -2
+color = Color(0.26, 0.29, 0.34, 1)
+polygon = PackedVector2Array(60, 100, 60, -20, 380, -20, 380, 100)
+
+[node name="BoulevardBump" type="StaticBody2D" parent="Environment"]
+position = Vector2(720, 100)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/BoulevardBump"]
+polygon = PackedVector2Array(-55, 0, -20, -8, 20, -8, 55, 0)
+
+[node name="Visual" type="Polygon2D" parent="Environment/BoulevardBump"]
+color = Color(0.58, 0.56, 0.52, 1)
+polygon = PackedVector2Array(-55, 0, -20, -8, 20, -8, 55, 0)
+
+[node name="Boundaries" type="Node2D" parent="."]
+
+[node name="LeftBoundaryWall" type="StaticBody2D" parent="Boundaries"]
+position = Vector2(-200, -100)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Boundaries/LeftBoundaryWall"]
+shape = SubResource("2")
+
+[node name="RightBoundaryWall" type="StaticBody2D" parent="Boundaries"]
+position = Vector2(1500, -100)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Boundaries/RightBoundaryWall"]
+shape = SubResource("2")
+
+[node name="SpawnPoints" type="Node2D" parent="."]
+
+[node name="DefaultSpawn" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(160, 62)
+script = ExtResource("2")
+spawn_id = "default"
+is_default = true
+
+[node name="FromHighwaySpawn" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(120, 62)
+script = ExtResource("2")
+spawn_id = "from_highway"
+
+[node name="FromTrackSpawn" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(260, 62)
+script = ExtResource("2")
+spawn_id = "from_track"
+
+[node name="Portals" type="Node2D" parent="."]
+
+[node name="WestPortalToTrack" type="Area2D" parent="Portals"]
+position = Vector2(-110, 40)
+script = ExtResource("4")
+portal_id = "hub_to_track"
+target_zone_id = "test_track"
+target_spawn_id = "from_hub"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Portals/WestPortalToTrack"]
+shape = SubResource("4")
+
+[node name="Visual" type="Polygon2D" parent="Portals/WestPortalToTrack"]
+color = Color(0.2, 0.65, 0.9, 0.35)
+polygon = PackedVector2Array(-30, -60, 30, -60, 30, 60, -30, 60)
+
+[node name="EastPortalToHighway" type="Area2D" parent="Portals"]
+position = Vector2(1340, 40)
+script = ExtResource("4")
+portal_id = "hub_to_highway"
+target_zone_id = "highway_strip"
+target_spawn_id = "from_hub"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Portals/EastPortalToHighway"]
+shape = SubResource("3")
+
+[node name="Visual" type="Polygon2D" parent="Portals/EastPortalToHighway"]
+color = Color(0.25, 0.85, 0.45, 0.35)
+polygon = PackedVector2Array(-40, -60, 40, -60, 40, 60, -40, 60)
+
+[node name="BikeCamera" parent="." instance=ExtResource("3")]
+
+[node name="TrafficSpawner" parent="." instance=ExtResource("5")]
+pool_size = 6
+max_active_vehicles = 3
+spawn_interval = 1.2
+min_spawn_spacing = 240.0
+min_player_clearance = 200.0
+spawn_ahead_distance = 440.0
+despawn_distance = 680.0
+road_y = 100.0
+road_min_x = -80.0
+road_max_x = 1320.0

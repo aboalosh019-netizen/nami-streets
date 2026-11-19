@@ -1,0 +1,157 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/world/zones/playable_zone.gd" id="1"]
+[ext_resource type="Script" path="res://src/world/zones/spawn_point.gd" id="2"]
+[ext_resource type="PackedScene" path="res://src/camera/bike_camera.tscn" id="3"]
+[ext_resource type="Script" path="res://src/world/navigation/zone_portal.gd" id="4"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(3600, 80)
+
+[sub_resource type="RectangleShape2D" id="2"]
+size = Vector2(40, 900)
+
+[sub_resource type="RectangleShape2D" id="3"]
+size = Vector2(80, 140)
+
+[node name="TestTrackZone" type="Node2D"]
+script = ExtResource("1")
+zone_id = "test_track"
+bounds_left = -200.0
+bounds_right = 3200.0
+bounds_top = -500.0
+bounds_bottom = 350.0
+default_spawn_id = "default"
+
+[node name="Environment" type="Node2D" parent="."]
+
+[node name="RoadSurface" type="StaticBody2D" parent="Environment"]
+position = Vector2(1500, 140)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Environment/RoadSurface"]
+shape = SubResource("1")
+
+[node name="Visual" type="Polygon2D" parent="Environment/RoadSurface"]
+color = Color(0.18, 0.19, 0.22, 1)
+polygon = PackedVector2Array(-1800, -40, 1800, -40, 1800, 40, -1800, 40)
+
+[node name="RoadStripe" type="Polygon2D" parent="Environment/RoadSurface"]
+color = Color(0.85, 0.72, 0.2, 1)
+polygon = PackedVector2Array(-1700, -34, 1700, -34, 1700, -30, -1700, -30)
+
+[node name="SpeedBump1" type="StaticBody2D" parent="Environment"]
+position = Vector2(450, 100)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/SpeedBump1"]
+polygon = PackedVector2Array(-50, 0, -18, -10, 18, -10, 50, 0)
+
+[node name="Visual" type="Polygon2D" parent="Environment/SpeedBump1"]
+color = Color(0.85, 0.65, 0.15, 1)
+polygon = PackedVector2Array(-50, 0, -18, -10, 18, -10, 50, 0)
+
+[node name="SidewalkCurb" type="StaticBody2D" parent="Environment"]
+position = Vector2(850, 100)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/SidewalkCurb"]
+polygon = PackedVector2Array(-180, 0, -130, -14, 130, -14, 180, 0)
+
+[node name="Visual" type="Polygon2D" parent="Environment/SidewalkCurb"]
+color = Color(0.55, 0.56, 0.58, 1)
+polygon = PackedVector2Array(-180, 0, -130, -14, 130, -14, 180, 0)
+
+[node name="OverpassRamp" type="StaticBody2D" parent="Environment"]
+position = Vector2(1780, 100)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/OverpassRamp"]
+polygon = PackedVector2Array(-440, 0, -80, -56, 80, -56, 440, 0)
+
+[node name="Visual" type="Polygon2D" parent="Environment/OverpassRamp"]
+color = Color(0.32, 0.34, 0.38, 1)
+polygon = PackedVector2Array(-440, 0, -80, -56, 80, -56, 440, 0)
+
+[node name="ObstacleBump2" type="StaticBody2D" parent="Environment"]
+position = Vector2(2520, 100)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Environment/ObstacleBump2"]
+polygon = PackedVector2Array(-60, 0, -22, -12, 22, -12, 60, 0)
+
+[node name="Visual" type="Polygon2D" parent="Environment/ObstacleBump2"]
+color = Color(0.75, 0.32, 0.22, 1)
+polygon = PackedVector2Array(-60, 0, -22, -12, 22, -12, 60, 0)
+
+[node name="Boundaries" type="Node2D" parent="."]
+
+[node name="LeftBoundaryWall" type="StaticBody2D" parent="Boundaries"]
+position = Vector2(-200, -100)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Boundaries/LeftBoundaryWall"]
+shape = SubResource("2")
+
+[node name="Visual" type="Polygon2D" parent="Boundaries/LeftBoundaryWall"]
+color = Color(0.7, 0.2, 0.2, 1)
+polygon = PackedVector2Array(-20, 150, 20, 150, 20, 200, -20, 200)
+
+[node name="RightBoundaryWall" type="StaticBody2D" parent="Boundaries"]
+position = Vector2(3200, -100)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Boundaries/RightBoundaryWall"]
+shape = SubResource("2")
+
+[node name="Visual" type="Polygon2D" parent="Boundaries/RightBoundaryWall"]
+color = Color(0.7, 0.2, 0.2, 1)
+polygon = PackedVector2Array(-20, 150, 20, 150, 20, 200, -20, 200)
+
+[node name="SpawnPoints" type="Node2D" parent="."]
+
+[node name="DefaultSpawn" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(120, 62)
+script = ExtResource("2")
+spawn_id = "default"
+is_default = true
+
+[node name="FromHubSpawn" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(160, 62)
+script = ExtResource("2")
+spawn_id = "from_hub"
+
+[node name="FromHighwaySpawn" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(200, 62)
+script = ExtResource("2")
+spawn_id = "from_highway"
+
+[node name="RampSpawn" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(1220, 62)
+script = ExtResource("2")
+spawn_id = "ramp"
+
+[node name="Portals" type="Node2D" parent="."]
+
+[node name="EastPortalToHub" type="Area2D" parent="Portals"]
+position = Vector2(2960, 40)
+script = ExtResource("4")
+portal_id = "track_to_hub"
+target_zone_id = "hub_boulevard"
+target_spawn_id = "from_track"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Portals/EastPortalToHub"]
+shape = SubResource("3")
+
+[node name="Visual" type="Polygon2D" parent="Portals/EastPortalToHub"]
+color = Color(0.3, 0.8, 0.9, 0.35)
+polygon = PackedVector2Array(-40, -60, 40, -60, 40, 60, -40, 60)
+
+[node name="BikeCamera" parent="." instance=ExtResource("3")]

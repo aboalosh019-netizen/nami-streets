@@ -1,0 +1,37 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://tests/economy/test_upgrades_and_rewards.gd" id="1"]
+[ext_resource type="PackedScene" path="res://src/bike/controller/controllable_bike.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://src/traffic/traffic_spawner.tscn" id="3"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(8000, 80)
+
+[node name="UpgradesAndRewardsTest" type="Node2D"]
+script = ExtResource("1")
+
+[node name="RoadStock" type="StaticBody2D" parent="."]
+position = Vector2(2500, 140)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RoadStock"]
+shape = SubResource("1")
+
+[node name="RoadUpgraded" type="StaticBody2D" parent="."]
+position = Vector2(2500, 340)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RoadUpgraded"]
+shape = SubResource("1")
+
+[node name="StockBike" parent="." instance=ExtResource("2")]
+position = Vector2(100, 62)
+
+[node name="UpgradedBike" parent="." instance=ExtResource("2")]
+position = Vector2(100, 262)
+
+[node name="TrafficSpawner" parent="." instance=ExtResource("3")]
+enabled = false
+auto_bind_zone_bike = false

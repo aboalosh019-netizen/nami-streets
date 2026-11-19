@@ -1,0 +1,19 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://src/bike/physics/bike_physics.tscn" id="1"]
+[ext_resource type="Script" path="res://src/bike/controller/bike_controller.gd" id="2"]
+[ext_resource type="Script" path="res://src/bike/visual/bike_visual.gd" id="3"]
+[ext_resource type="Script" path="res://src/bike/visual/bike_vfx.gd" id="4"]
+
+[node name="ControllableBike" instance=ExtResource("1")]
+
+[node name="BikeController" type="Node" parent="."]
+script = ExtResource("2")
+
+[node name="BikeVisual" type="Node2D" parent="."]
+z_index = 2
+script = ExtResource("3")
+
+[node name="BikeVFX" type="Node2D" parent="."]
+z_index = 3
+script = ExtResource("4")

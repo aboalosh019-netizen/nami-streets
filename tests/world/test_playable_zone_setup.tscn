@@ -1,0 +1,40 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://tests/world/test_playable_zone_setup.gd" id="1"]
+[ext_resource type="Script" path="res://src/world/zones/playable_zone.gd" id="2"]
+[ext_resource type="Script" path="res://src/world/zones/spawn_point.gd" id="3"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(3000, 40)
+
+[node name="PlayableZoneSetupTest" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Zone" type="Node2D" parent="."]
+script = ExtResource("2")
+zone_id = "setup_test_zone"
+bounds_left = -100.0
+bounds_right = 2000.0
+bounds_top = -300.0
+bounds_bottom = 400.0
+
+[node name="Ground" type="StaticBody2D" parent="Zone"]
+position = Vector2(900, 120)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Zone/Ground"]
+shape = SubResource("1")
+
+[node name="SpawnPoints" type="Node2D" parent="Zone"]
+
+[node name="DefaultSpawn" type="Marker2D" parent="Zone/SpawnPoints"]
+position = Vector2(100, 55)
+script = ExtResource("3")
+spawn_id = "default"
+is_default = true
+
+[node name="RampSpawn" type="Marker2D" parent="Zone/SpawnPoints"]
+position = Vector2(600, 55)
+script = ExtResource("3")
+spawn_id = "ramp"
