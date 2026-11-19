@@ -1,0 +1,10 @@
+.godot/
+.nomedia
+export_presets.cfg
+*.apk
+*.aab
+*.keystore
+android/
+.DS_Store
+*.swp
+*~
