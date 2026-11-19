@@ -1,0 +1,85 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/gameplay_hud.gd" id="1"]
+
+[node name="GameplayHUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1")
+popup_duration_sec = 0.6
+
+[node name="TopBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 10.0
+offset_top = 8.0
+offset_right = -10.0
+offset_bottom = 36.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="SpeedLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+text = "0 KM/H"
+
+[node name="GearLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+text = "G:1"
+
+[node name="RpmBar" type="ProgressBar" parent="TopBar"]
+custom_minimum_size = Vector2(110, 18)
+layout_mode = 2
+max_value = 10200.0
+show_percentage = false
+
+[node name="RpmLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+text = "1400 RPM"
+
+[node name="RevBadge" type="Label" parent="TopBar"]
+visible = false
+layout_mode = 2
+text = "REV LIMIT"
+
+[node name="Spacer" type="Control" parent="TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="CashLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+text = "$0"
+
+[node name="PauseButton" type="Button" parent="TopBar"]
+layout_mode = 2
+text = "II"
+
+[node name="StatusBanner" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 42.0
+offset_right = 120.0
+offset_bottom = 96.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="ComboLabel" type="Label" parent="StatusBanner"]
+visible = false
+layout_mode = 2
+horizontal_alignment = 1
+text = ""
+
+[node name="PopupLabel" type="Label" parent="StatusBanner"]
+visible = false
+layout_mode = 2
+horizontal_alignment = 1
+text = ""
